@@ -7,8 +7,10 @@ canvas_height = 576
 cell_size = 4  # ขนาดช่องตาราง
 zoom_factor = 1.0
 base_cell_size = 4
+initial_rows = canvas_height // base_cell_size
+initial_cols = canvas_width // base_cell_size
 
-points = {}  # เก็บสีของแต่ละช่อง {(row, col): color}
+points = {}  # เก็บสีของแต่ละช่อง {(row, col): (rect_id, color)}
 
 paint_color = "#11ff00"
 button_font = ("Helvetica", 11)
@@ -18,14 +20,6 @@ master.title("Drawing App with Grid")
 
 canvas = tk.Canvas(master, width=canvas_width, height=canvas_height, bg="white")
 canvas.pack()
-
-def draw_crosshair():
-    center_x = canvas_width // 2
-    center_y = canvas_height // 2
-    # วาดเส้นแนวตั้งตรงกลาง
-    canvas.create_line(center_x, 0, center_x, canvas_height, fill="red", width=2)
-    # วาดเส้นแนวนอนตรงกลาง
-    canvas.create_line(0, center_y, canvas_width, center_y, fill="blue", width=2)
 
 def draw_grid():
     rows = canvas_height // cell_size
@@ -58,14 +52,19 @@ def paint(event):
     col = event.x // cell_size
     row = event.y // cell_size
     if 0 <= col < canvas_width // cell_size and 0 <= row < canvas_height // cell_size:
-        x1 = col * cell_size
-        y1 = row * cell_size
-        x2 = x1 + cell_size
-        y2 = y1 + cell_size
+        if (row, col) in points:
+            rect_id, _ = points[(row, col)]
+            canvas.itemconfig(rect_id, fill=paint_color)
+            points[(row, col)] = (rect_id, paint_color)
+        else:
+            x1 = col * cell_size
+            y1 = row * cell_size
+            x2 = x1 + cell_size
+            y2 = y1 + cell_size
 
-        # วาดสี่เหลี่ยมสีในช่องนั้น (ลบสีเก่า)
-        rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=paint_color, outline="")
-        points[(row, col)] = (rect_id, paint_color) # id color
+            # วาดสี่เหลี่ยมสีในช่องนั้น (ลบสีเก่า)
+            rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=paint_color, outline="")
+            points[(row, col)] = (rect_id, paint_color) # id color
 
 def save_drawing():
     file_path = fd.asksaveasfilename(
@@ -100,7 +99,7 @@ def load_drawing():
                 y1 = row * cell_size
                 x2 = x1 + cell_size
                 y2 = y1 + cell_size
-                canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="gray")
+                canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
                 points[(row, col)] = (id, color)
 
 def choose_color():
@@ -119,6 +118,16 @@ def erase(event):
         canvas.delete(rect_id)
         del points[(row, col)]
 
+def update_canvas_and_cellsize(zoom_factor):
+    global canvas_width, canvas_height, cell_size
+    cell_size = int(base_cell_size * zoom_factor)
+    if cell_size < 1:
+        cell_size = 1
+    canvas_width = initial_cols * cell_size
+    canvas_height = initial_rows * cell_size
+    canvas.config(width=canvas_width, height=canvas_height)
+    return cell_size, canvas_width, canvas_height
+
 def redraw_all():
     canvas.delete("all")
     draw_grid()
@@ -127,20 +136,17 @@ def redraw_all():
         y1 = row * cell_size
         x2 = x1 + cell_size
         y2 = y1 + cell_size
-        canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
+        new_rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
+        points[(row, col)] = (new_rect_id, color)
 
 def zoom(event):
     global zoom_factor, cell_size
-    # ปรับ zoom_factor ตามทิศทาง scroll
     if event.delta > 0:
         zoom_factor *= 1.1
-    else:
+    elif event.delta < 0:
         zoom_factor /= 1.1
-    # จำกัด zoom_factor ให้อยู่ในช่วงที่เหมาะสม
-    zoom_factor = max(0.5, min(zoom_factor, 10))
-    cell_size = int(base_cell_size * zoom_factor)
-    # ปรับ scrollregion
-    canvas.config(scrollregion=(0, 0, canvas_width * zoom_factor, canvas_height * zoom_factor))
+    zoom_factor = max(0.2, min(zoom_factor, 5))
+    update_canvas_and_cellsize(zoom_factor)
     redraw_all()
 
 message = tk.Label(master, text="คลิ๊กซ้ายลงสี, คลิ๊กขวาลบสี", font=("Helvetica", 11))
@@ -166,6 +172,6 @@ color_display.pack(side=tk.LEFT, padx=2)
 
 canvas.bind("<Button-1>", paint)
 canvas.bind("<Button-3>", erase)
-# canvas.bind("<MouseWheel>", zoom)
+canvas.bind("<MouseWheel>", zoom)
 
 master.mainloop()
