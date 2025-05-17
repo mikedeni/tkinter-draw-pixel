@@ -172,6 +172,8 @@ def zoom(event):
     zoom_factor = max(0.2, min(zoom_factor, 5))
     update_canvas_and_cellsize(zoom_factor)
     redraw_all()
+    # อัปเดต scrollregion ให้ครอบคลุมพื้นที่ใหม่
+    canvas.config(scrollregion=(0, 0, canvas_width, canvas_height))
 
 message = tk.Label(master, text="คลิ๊กซ้ายลงสี, คลิ๊กขวาลบสี", font=("Helvetica", 11))
 message.pack()
