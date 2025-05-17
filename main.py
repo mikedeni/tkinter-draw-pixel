@@ -17,10 +17,13 @@ button_font = ("Helvetica", 11)
 
 master = tk.Tk()
 master.title("Drawing App with Grid")
+master.grid_rowconfigure(1, weight=1)
+master.grid_columnconfigure(0, weight=1)
+master.geometry("1024x650+100+50")
 
 # สร้าง frame ครอบ canvas กับ scrollbar
 canvas_frame = tk.Frame(master)
-canvas_frame.pack(fill=tk.BOTH, expand=True)
+canvas_frame.grid(row=1, column=0, sticky="nsew")
 
 canvas = tk.Canvas(canvas_frame, width=canvas_width, height=canvas_height, bg="white")
 canvas.grid(row=0, column=0, sticky="nsew")
@@ -36,7 +39,7 @@ h_scrollbar.grid(row=1, column=0, sticky="ew")
 # เชื่อม scrollbar กับ canvas
 canvas.config(xscrollcommand=h_scrollbar.set, yscrollcommand=v_scrollbar.set)
 
-# กำหนดขนาด scrollable area (scrollregion)
+# กำหนดขนาด scrollable area
 canvas.config(scrollregion=(0, 0, canvas_width, canvas_height))
 
 # ปรับ grid config ให้ canvas_frame ขยายได้
@@ -163,38 +166,34 @@ def redraw_all():
         new_rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
         points[(row, col)] = (new_rect_id, color)
 
+# ฟังก์ชัน zoom ที่ปรับปรุงแล้ว
 def zoom(event):
     global zoom_factor, cell_size
+    # บันทึกตำแหน่งเดิมก่อนซูม
+    x = canvas.canvasx(event.x)
+    y = canvas.canvasy(event.y)
+    
+    # คำนวณอัตราส่วนตำแหน่งเทียบกับขนาด canvas
+    x_ratio = x / canvas_width
+    y_ratio = y / canvas_height
+    
+    # ปรับ zoom factor
     if event.delta > 0:
         zoom_factor *= 1.1
     elif event.delta < 0:
         zoom_factor /= 1.1
     zoom_factor = max(0.2, min(zoom_factor, 5))
+    
+    # ปรับขนาด cell และ canvas
     update_canvas_and_cellsize(zoom_factor)
     redraw_all()
-    # อัปเดต scrollregion ให้ครอบคลุมพื้นที่ใหม่
+    
+    # อัปเดต scrollregion
     canvas.config(scrollregion=(0, 0, canvas_width, canvas_height))
-
-message = tk.Label(master, text="คลิ๊กซ้ายลงสี, คลิ๊กขวาลบสี", font=("Helvetica", 11))
-message.pack()
-
-frame = tk.Frame(master)
-frame.pack(padx=40, pady=2)
-
-save_button = tk.Button(frame, text="บันทึกภาพวาด", command=save_drawing, font=button_font)
-save_button.pack(side=tk.LEFT, padx=20)
-
-load_button = tk.Button(frame, text="เปิดภาพวาด", command=load_drawing, font=button_font)
-load_button.pack(side=tk.LEFT, padx=20)
-
-clear_button = tk.Button(frame, text="ล้างภาพวาด", command=clear_canvas, font=button_font)
-clear_button.pack(side=tk.LEFT, padx=20)
-
-color_button = tk.Button(frame, text="เลือกสี", command=choose_color, font=button_font)
-color_button.pack(side=tk.LEFT, padx=20)
-
-color_display = tk.Label(frame, bg=paint_color, width=2)
-color_display.pack(side=tk.LEFT, padx=2)
+    
+    # เลื่อนให้ตำแหน่งที่ซูมอยู่ตรงกลาง
+    canvas.xview_moveto(x_ratio - 0.5)
+    canvas.yview_moveto(y_ratio - 0.5)
 
 def update_color_from_entry(event=None):
     global paint_color
@@ -208,18 +207,40 @@ def update_color_from_entry(event=None):
         except tk.TclError:
             pass  # สีไม่ถูกต้อง ไม่ทำอะไร
 
-# สร้าง Entry สำหรับแก้ไขสี
-color_entry = tk.Entry(frame, width=8, font=button_font)
-color_entry.pack(side=tk.LEFT, padx=5)
-color_entry.insert(0, paint_color)  # แสดงสีเริ่มต้น
+message = tk.Label(master, text="คลิ๊กซ้ายลงสี, คลิ๊กขวาลบสี", font=("Helvetica", 11))
+message.grid(row=0, column=0, sticky="ew")
 
-# ผูก event กด Enter ในกล่องข้อความ ให้เรียกฟังก์ชันอัปเดตสี
+button_frame = tk.Frame(master)
+button_frame.grid(row=2, column=0, sticky="ew", padx=40, pady=5)
+
+# ตั้งค่าให้คอลัมน์ในส่วนปุ่มมีน้ำหนักเท่ากัน
+button_frame.grid_columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+
+# ย้ายปุ่มไปอยู่ใน button_frame
+save_button = tk.Button(button_frame, text="บันทึกภาพวาด", command=save_drawing, font=button_font)
+save_button.grid(row=0, column=0, padx=10, sticky="ew")
+
+load_button = tk.Button(button_frame, text="เปิดภาพวาด", command=load_drawing, font=button_font)
+load_button.grid(row=0, column=1, padx=10, sticky="ew")
+
+clear_button = tk.Button(button_frame, text="ล้างภาพวาด", command=clear_canvas, font=button_font)
+clear_button.grid(row=0, column=2, padx=10, sticky="ew")
+
+color_button = tk.Button(button_frame, text="เลือกสี", command=choose_color, font=button_font)
+color_button.grid(row=0, column=3, padx=10, sticky="ew")
+
+color_display = tk.Label(button_frame, bg=paint_color, width=2)
+color_display.grid(row=0, column=4, padx=5, sticky="ew")
+
+color_entry = tk.Entry(button_frame, width=8, font=button_font)
+color_entry.grid(row=0, column=5, padx=5, sticky="ew")
+color_entry.insert(0, paint_color)
 color_entry.bind("<Return>", update_color_from_entry)
-
 
 canvas.bind("<Button-1>", paint)
 canvas.bind("<B1-Motion>", paint)
 canvas.bind("<Button-3>", erase)
+canvas.bind("<B3-Motion>", erase)
 canvas.bind("<MouseWheel>", zoom)
 
 master.mainloop()
