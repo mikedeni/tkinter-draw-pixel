@@ -218,6 +218,7 @@ color_entry.bind("<Return>", update_color_from_entry)
 
 
 canvas.bind("<Button-1>", paint)
+canvas.bind("<B1-Motion>", paint)
 canvas.bind("<Button-3>", erase)
 canvas.bind("<MouseWheel>", zoom)
 
