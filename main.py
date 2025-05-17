@@ -18,34 +18,30 @@ button_font = ("Helvetica", 11)
 master = tk.Tk()
 master.title("Drawing App with Grid")
 
-canvas = tk.Canvas(master, width=canvas_width, height=canvas_height, bg="white")
-canvas.pack()
+# สร้าง frame ครอบ canvas กับ scrollbar
+canvas_frame = tk.Frame(master)
+canvas_frame.pack(fill=tk.BOTH, expand=True)
 
-# เพิ่ม Scrollbars
-hbar = tk.Scrollbar(master, orient=tk.HORIZONTAL)
-hbar.pack(side=tk.BOTTOM, fill=tk.X)
-vbar = tk.Scrollbar(master, orient=tk.VERTICAL)
-vbar.pack(side=tk.RIGHT, fill=tk.Y)
+canvas = tk.Canvas(canvas_frame, width=canvas_width, height=canvas_height, bg="white")
+canvas.grid(row=0, column=0, sticky="nsew")
 
-canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
-hbar.config(command=canvas.xview)
-vbar.config(command=canvas.yview)
+# สร้าง scrollbar แนวตั้ง
+v_scrollbar = tk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=canvas.yview)
+v_scrollbar.grid(row=0, column=1, sticky="ns")
 
-# ตั้ง scrollregion หลังวาด grid และวาดวัตถุ
-def update_scrollregion():
-    canvas.config(scrollregion=canvas.bbox("all"))
+# สร้าง scrollbar แนวนอน
+h_scrollbar = tk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL, command=canvas.xview)
+h_scrollbar.grid(row=1, column=0, sticky="ew")
 
-# ผูก event สำหรับ pan ด้วยเมาส์กลาง (หรือซ้าย)
-def start_pan(event):
-    if event.state & 0x0004: # Ctrl key
-        canvas.scan_mark(event.x, event.y)
+# เชื่อม scrollbar กับ canvas
+canvas.config(xscrollcommand=h_scrollbar.set, yscrollcommand=v_scrollbar.set)
 
-def do_pan(event):
-    if event.state & 0x0004:
-        canvas.scan_dragto(event.x, event.y, gain=1)
+# กำหนดขนาด scrollable area (scrollregion)
+canvas.config(scrollregion=(0, 0, canvas_width, canvas_height))
 
-canvas.bind("<ButtonPress-2>", start_pan)  # กดกลางเมาส์เริ่ม pan
-canvas.bind("<B2-Motion>", do_pan)         # ลากเมาส์กลาง pan
+# ปรับ grid config ให้ canvas_frame ขยายได้
+canvas_frame.grid_rowconfigure(0, weight=1)
+canvas_frame.grid_columnconfigure(0, weight=1)
 
 def draw_grid():
     rows = canvas_height // cell_size
@@ -75,8 +71,11 @@ draw_grid()
 
 # ฟังก์ชันวาดสีในช่องตาราง
 def paint(event):
-    col = event.x // cell_size
-    row = event.y // cell_size
+    # ปรับพิกัดตาม scroll offset
+    x = canvas.canvasx(event.x)
+    y = canvas.canvasy(event.y)
+    col = int(x // cell_size)
+    row = int(y // cell_size)
     if 0 <= col < canvas_width // cell_size and 0 <= row < canvas_height // cell_size:
         if (row, col) in points:
             rect_id, _ = points[(row, col)]
@@ -87,10 +86,8 @@ def paint(event):
             y1 = row * cell_size
             x2 = x1 + cell_size
             y2 = y1 + cell_size
-
-            # วาดสี่เหลี่ยมสีในช่องนั้น (ลบสีเก่า)
             rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=paint_color, outline="")
-            points[(row, col)] = (rect_id, paint_color) # id color
+            points[(row, col)] = (rect_id, paint_color)
 
 def save_drawing():
     file_path = fd.asksaveasfilename(
@@ -136,10 +133,11 @@ def choose_color():
         color_display.config(bg=paint_color)
 
 def erase(event):
-    col = event.x // cell_size
-    row = event.y // cell_size
+    x = canvas.canvasx(event.x)
+    y = canvas.canvasy(event.y)
+    col = int(x // cell_size)
+    row = int(y // cell_size)
     if (row, col) in points:
-        # delete canvas by point id
         rect_id, _ = points[(row, col)]
         canvas.delete(rect_id)
         del points[(row, col)]
@@ -164,8 +162,7 @@ def redraw_all():
         y2 = y1 + cell_size
         new_rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
         points[(row, col)] = (new_rect_id, color)
-    update_scrollregion()
-    
+
 def zoom(event):
     global zoom_factor, cell_size
     if event.delta > 0:
@@ -175,7 +172,6 @@ def zoom(event):
     zoom_factor = max(0.2, min(zoom_factor, 5))
     update_canvas_and_cellsize(zoom_factor)
     redraw_all()
-    update_scrollregion()
 
 message = tk.Label(master, text="คลิ๊กซ้ายลงสี, คลิ๊กขวาลบสี", font=("Helvetica", 11))
 message.pack()
@@ -201,7 +197,5 @@ color_display.pack(side=tk.LEFT, padx=2)
 canvas.bind("<Button-1>", paint)
 canvas.bind("<Button-3>", erase)
 canvas.bind("<MouseWheel>", zoom)
-canvas.bind("<ButtonPress-1>", start_pan)   # กดเมาส์ซ้ายเริ่ม pan ถ้ากด Ctrl
-canvas.bind("<B1-Motion>", do_pan)           # ลากเมาส์ซ้ายขณะกด Ctrl เพื่อ pan       # ลากเมาส์กลาง pan
 
 master.mainloop()
