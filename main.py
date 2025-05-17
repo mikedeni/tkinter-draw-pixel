@@ -21,6 +21,32 @@ master.title("Drawing App with Grid")
 canvas = tk.Canvas(master, width=canvas_width, height=canvas_height, bg="white")
 canvas.pack()
 
+# เพิ่ม Scrollbars
+hbar = tk.Scrollbar(master, orient=tk.HORIZONTAL)
+hbar.pack(side=tk.BOTTOM, fill=tk.X)
+vbar = tk.Scrollbar(master, orient=tk.VERTICAL)
+vbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+canvas.config(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
+hbar.config(command=canvas.xview)
+vbar.config(command=canvas.yview)
+
+# ตั้ง scrollregion หลังวาด grid และวาดวัตถุ
+def update_scrollregion():
+    canvas.config(scrollregion=canvas.bbox("all"))
+
+# ผูก event สำหรับ pan ด้วยเมาส์กลาง (หรือซ้าย)
+def start_pan(event):
+    if event.state & 0x0004: # Ctrl key
+        canvas.scan_mark(event.x, event.y)
+
+def do_pan(event):
+    if event.state & 0x0004:
+        canvas.scan_dragto(event.x, event.y, gain=1)
+
+canvas.bind("<ButtonPress-2>", start_pan)  # กดกลางเมาส์เริ่ม pan
+canvas.bind("<B2-Motion>", do_pan)         # ลากเมาส์กลาง pan
+
 def draw_grid():
     rows = canvas_height // cell_size
     cols = canvas_width // cell_size
@@ -138,7 +164,8 @@ def redraw_all():
         y2 = y1 + cell_size
         new_rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
         points[(row, col)] = (new_rect_id, color)
-
+    update_scrollregion()
+    
 def zoom(event):
     global zoom_factor, cell_size
     if event.delta > 0:
@@ -148,6 +175,7 @@ def zoom(event):
     zoom_factor = max(0.2, min(zoom_factor, 5))
     update_canvas_and_cellsize(zoom_factor)
     redraw_all()
+    update_scrollregion()
 
 message = tk.Label(master, text="คลิ๊กซ้ายลงสี, คลิ๊กขวาลบสี", font=("Helvetica", 11))
 message.pack()
@@ -173,5 +201,7 @@ color_display.pack(side=tk.LEFT, padx=2)
 canvas.bind("<Button-1>", paint)
 canvas.bind("<Button-3>", erase)
 canvas.bind("<MouseWheel>", zoom)
+canvas.bind("<ButtonPress-1>", start_pan)   # กดเมาส์ซ้ายเริ่ม pan ถ้ากด Ctrl
+canvas.bind("<B1-Motion>", do_pan)           # ลากเมาส์ซ้ายขณะกด Ctrl เพื่อ pan       # ลากเมาส์กลาง pan
 
 master.mainloop()
