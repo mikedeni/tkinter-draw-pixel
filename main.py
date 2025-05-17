@@ -196,6 +196,27 @@ color_button.pack(side=tk.LEFT, padx=20)
 color_display = tk.Label(frame, bg=paint_color, width=2)
 color_display.pack(side=tk.LEFT, padx=2)
 
+def update_color_from_entry(event=None):
+    global paint_color
+    color = color_entry.get()
+    if color.startswith("#") and (len(color) == 7 or len(color) == 4):
+        try:
+            # ทดสอบสีโดยสร้างสี่เหลี่ยมเล็กๆ
+            canvas.create_rectangle(0, 0, 1, 1, fill=color)
+            paint_color = color
+            color_display.config(bg=paint_color)
+        except tk.TclError:
+            pass  # สีไม่ถูกต้อง ไม่ทำอะไร
+
+# สร้าง Entry สำหรับแก้ไขสี
+color_entry = tk.Entry(frame, width=8, font=button_font)
+color_entry.pack(side=tk.LEFT, padx=5)
+color_entry.insert(0, paint_color)  # แสดงสีเริ่มต้น
+
+# ผูก event กด Enter ในกล่องข้อความ ให้เรียกฟังก์ชันอัปเดตสี
+color_entry.bind("<Return>", update_color_from_entry)
+
+
 canvas.bind("<Button-1>", paint)
 canvas.bind("<Button-3>", erase)
 canvas.bind("<MouseWheel>", zoom)
