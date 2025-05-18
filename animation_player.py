@@ -47,7 +47,7 @@ class AnimationPlayer:
         self.control_panel = tk.Frame(self.root)
         self.control_panel.grid(row=2, column=0, sticky="ew", padx=40, pady=5)
         
-        # ปุ่มควบคุม
+        # สร้างปุ่ม Skill 1-3 ในแผงควบคุม โดยตั้งค่าให้กดแล้วเล่นแอนิเมชันช่วงเฟรมที่กำหนด
         self.control_panel.grid_columnconfigure((0, 1, 2), weight=1)
         
         self.skill1_button = tk.Button(self.control_panel, text="Skill 1", command=lambda:self.play_animation(3, 10), font=("Helvetica", 11))
@@ -102,6 +102,7 @@ class AnimationPlayer:
                 y2 = y1 + CELL_SIZE
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
     
+    # เล่นแอนิเมชันจากเฟรมที่กำหนด โดยตรวจสอบช่วงเฟรมและตั้งสถานะการเล่นให้พร้อม.
     def play_animation(self, start, end):
         self.is_idle = False
         start -= 1
@@ -128,6 +129,7 @@ class AnimationPlayer:
         self.idle_frame_index = 0
         self.root.after(500, self.run_idle_animation)
     
+    # แสดงเฟรมปัจจุบันและเลื่อนเล่นแอนิเมชันต่อไปจนถึงเฟรมสุดท้ายแล้วหยุด.
     def animate_next_frame(self):
         if not self.is_playing:
             return

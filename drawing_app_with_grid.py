@@ -92,12 +92,13 @@ class DrawingApp:
         self.color_entry.insert(0, self.paint_color)
         self.color_entry.bind("<Return>", self.update_color_from_entry)
 
+    # ผูกเหตุการณ์เมาส์กับฟังก์ชันวาด ลบ และซูมบนแคนวาสเพื่อให้ผู้ใช้โต้ตอบได้
     def bind_events(self):
-        self.canvas.bind("<Button-1>", self.paint)
-        self.canvas.bind("<B1-Motion>", self.paint)
-        self.canvas.bind("<Button-3>", self.erase)
-        self.canvas.bind("<B3-Motion>", self.erase)
-        self.canvas.bind("<MouseWheel>", self.zoom)
+        self.canvas.bind("<Button-1>", self.paint) # คลิกซ้ายเมาส์ครั้งเดียวเพื่อวาด
+        self.canvas.bind("<B1-Motion>", self.paint) # กดซ้ายเมาส์ลากเพื่อวาด
+        self.canvas.bind("<Button-3>", self.erase) # คลิกขวาเมาส์ครั้งเดียวเพื่อลบ
+        self.canvas.bind("<B3-Motion>", self.erase) # กดขวาเมาส์ลากเพื่อลบ
+        self.canvas.bind("<MouseWheel>", self.zoom) # ใช้เลื่อนล้อเมาส์เพื่อซูม
         self.master.bind("<Left>", lambda e: self.canvas.xview_scroll(-1, "units"))
         self.master.bind("<Right>", lambda e: self.canvas.xview_scroll(1, "units"))
         self.master.bind("<Up>", lambda e: self.canvas.yview_scroll(-1, "units"))
@@ -127,6 +128,7 @@ class DrawingApp:
             else:
                 self.canvas.create_line(0, y, self.canvas_width, y, fill="gray")
 
+    # แปลงพิกัดเมาส์เป็นตำแหน่งกริดแล้ววาดหรือเปลี่ยนสีสี่เหลี่ยมช่องนั้นบนแคนวาสตามสีที่กำหนด
     def paint(self, event):
         # ปรับพิกัดตาม scroll offset
         x = self.canvas.canvasx(event.x)
@@ -146,6 +148,7 @@ class DrawingApp:
                 rect_id = self.canvas.create_rectangle(x1, y1, x2, y2, fill=self.paint_color, outline="")
                 self.points[(row, col)] = (rect_id, self.paint_color)
 
+    # บันทึกตำแหน่งและสีของจุดวาดทั้งหมดลงไฟล์ .txt
     def save_drawing(self):
         file_path = fd.asksaveasfilename(
             defaultextension=".txt",
