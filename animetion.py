@@ -3,6 +3,7 @@ from tkinter import filedialog as fd
 import os
 import glob
 from pathlib import Path
+import re
 
 canvas_width = 1024
 canvas_height = 576
@@ -87,13 +88,33 @@ class AnimationPlayer:
         self.stop_animation()
         
         # ดึงไฟล์ .txt ทั้งหมดจากโฟลเดอร์
-        txt_files = sorted(glob.glob(os.path.join(folder_path, "*.txt")))
-        if not txt_files:
-            self.frame_label.config(text="ไม่พบไฟล์ .txt ในโฟลเดอร์")
-            return
+        txt_files = glob.glob(os.path.join(folder_path, "*.txt"))
+
+        # แก้ไข path ให้ใช้ / แทน \ เพื่อให้ pathlib ทำงานถูกต้อง
+        txt_files = [path.replace('\\', '/') for path in txt_files]
+
+        # ดึงชื่อไฟล์ออกมา
+        file_names = [Path(path).name for path in txt_files]
+
+        # สร้างคู่ (ชื่อไฟล์, path) เพื่อเรียงลำดับตามเลขในชื่อไฟล์
+        def extract_number(filename):
+            # สมมติชื่อไฟล์เป็นรูปแบบเลข.txt เช่น 1.txt, 10.txt
+            match = re.search(r'(\d+)', filename)
+            return int(match.group(1)) if match else -1
+        
+        # จับคู่ชื่อไฟล์กับ path
+        files_with_names = list(zip(file_names, txt_files))
+
+        # เรียงลำดับตามเลขในชื่อไฟล์
+        files_with_names.sort(key=lambda x: extract_number(x[0]))
+
+        # แยกชื่อไฟล์และ path ที่เรียงแล้ว
+        sorted_file_names, sorted_paths = zip(*files_with_names)
+
+        print("เรียงชื่อไฟล์:", sorted_file_names)
             
         # โหลดทุกเฟรม
-        for file_path in txt_files:
+        for file_path in sorted_paths:
             frame_data = {}
             try:
                 with open(file_path, "r") as f:
