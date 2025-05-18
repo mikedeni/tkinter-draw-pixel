@@ -71,7 +71,7 @@ class AnimationPlayer:
         
         txt_files = sorted(self.animation_folder_path.glob("*.txt"), key=extract_number)
             
-        # โหลดทุกเฟรม
+        # โหลดข้อมูลแต่ละเฟรมจากไฟล์ txt แล้วเก็บตำแหน่งและสีลงใน frames
         for file_path in txt_files:
             frame_data = {}
             try:
