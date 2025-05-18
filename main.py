@@ -24,6 +24,7 @@ class DrawingApp:
         
         self.setup_ui()
         self.draw_grid()
+        self.setup_color_palette()
         self.bind_events()
     
     def setup_ui(self):
@@ -182,10 +183,12 @@ class DrawingApp:
                     self.points[(row, col)] = (id, color)
 
     def choose_color(self):
-        color_code = cc.askcolor(title="เลือกสี")
-        if color_code[1] is not None:
-            self.paint_color = color_code[1]
+        color_code = cc.askcolor(title="เลือกสี")[1]
+        if color_code:
+            self.paint_color = color_code
             self.color_display.config(bg=self.paint_color)
+            self.color_entry.delete(0, tk.END)
+            self.color_entry.insert(0, self.paint_color)
 
     def erase(self, event):
         x = self.canvas.canvasx(event.x)
@@ -254,6 +257,56 @@ class DrawingApp:
                 self.color_display.config(bg=self.paint_color)
             except tk.TclError:
                 pass  # สีไม่ถูกต้อง ไม่ทำอะไร
+
+    def setup_color_palette(self):
+        palette = tk.Frame(self.master)
+        palette.grid(row=3, column=0, padx=10, pady=5)
+
+        colors = [
+            "#000000",
+            "#282828",
+            "#505050",
+            "#a0a0a0",
+            "#d09018",
+            "#f8e048",
+            "#e84000",
+            "#f89840",
+            "#d86020",
+            "#fb9043",
+            "#f8c880",
+            "#f8ebce",
+            "#4880b0",
+            "#887068",
+            "#c0b0a8",
+            "#e0d8d0",
+            "#1840f8",
+            "#3bc6f8",
+            "#a8e8f8",
+            "#dff4f8",
+            "#f80000",
+            "#f89040",
+            "#a00800",
+            "#e82810"
+        ]
+
+        for i, color in enumerate(colors):
+            btn = tk.Button(palette, bg=color, width=2, height=1)
+            btn.config(command=lambda c=color: self.select_color(c))
+            btn.grid(row=0, column=i, padx=3)
+
+        add_btn = tk.Button(palette, text="+", width=2, command=self.open_color_picker)
+        add_btn.grid(row=0, column=len(colors), padx=3)
+    
+    def select_color(self, color):
+        self.paint_color = color
+        self.color_display.config(bg=color)
+        self.color_entry.delete(0, tk.END)
+        self.color_entry.insert(0, color)
+
+    def open_color_picker(self):
+        color = cc.askcolor(title="เลือกสี")[1]
+        if color:
+            self.select_color(color)
 
 def main():
     root = tk.Tk()
