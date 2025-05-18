@@ -97,6 +97,10 @@ class DrawingApp:
         self.canvas.bind("<Button-3>", self.erase)
         self.canvas.bind("<B3-Motion>", self.erase)
         self.canvas.bind("<MouseWheel>", self.zoom)
+        self.master.bind("<Left>", lambda e: self.canvas.xview_scroll(-1, "units"))
+        self.master.bind("<Right>", lambda e: self.canvas.xview_scroll(1, "units"))
+        self.master.bind("<Up>", lambda e: self.canvas.yview_scroll(-1, "units"))
+        self.master.bind("<Down>", lambda e: self.canvas.yview_scroll(1, "units"))
 
     def draw_grid(self):
         rows = self.canvas_height // self.cell_size
